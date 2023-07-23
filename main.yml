@@ -12,21 +12,38 @@
         - "{{ playbook_dir }}/config.yml"
       tags: ['always']
 
-  roles:
-    - role: elliotweiser.osx-command-line-tools
-    - role: geerlingguy.mac.homebrew
+  tasks:
+    - name: Install Command Line Tools
+      include_role:
+        name: elliotweiser.osx-command-line-tools
+
+    - name: Install Homebrew
+      include_role:
+        name: geerlingguy.mac.homebrew
       tags: ['homebrew']
-    - role: geerlingguy.dotfiles
+
+    - name: Install dotfiles
+      include_role:
+        name: geerlingguy.dotfiles
       when: configure_dotfiles
       tags: ['dotfiles']
-    - role: geerlingguy.mac.mas
+
+    - name: Install Mac App Store Applications
+      include_role:
+        name: geerlingguy.mac.mas
       when: mas_installed_apps or mas_installed_app_ids
       tags: ['mas']
-    - role: geerlingguy.mac.dock
+    
+    - name: Accept XCode Terms
+      ansible.builtin.command: sudo xcodebuild -license accept
+      when: accept_xcode_license
+
+    - name: Configure Dock
+      include_role:
+        name: geerlingguy.mac.dock
       when: configure_dock
       tags: ['dock']
-
-  tasks:
+    
     - import_tasks: tasks/sudoers.yml
       when: configure_sudoers
       tags: ['sudoers']
@@ -49,6 +66,10 @@
     - import_tasks: tasks/vscode.yml
       when: configure_vscode
       tags: ['vs-code']
+
+    - import_tasks: tasks/add-applications-dock.yml
+      when: add_applications_to_dock
+      tags: ['dock']
 
     - name: Run post-provision task files in a block.
       tags: ['post']
